@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Гарант-приложение</title>
+</head>
+<body>
+  <h1>Мини-приложение гаранта</h1>
+  <p>Здесь будет интерфейс для создания сделок и оплаты.</p>
+
+  <button id="btn">Нажмите для подтверждения оплаты</button>
+
+  <!-- Подключаем Telegram Web App API -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.expand(); // Разворачиваем приложение на весь экран
+
+    document.getElementById('btn').onclick = function () {
+      // Отправляем данные боту
+      tg.sendData(JSON.stringify({ action: 'payment_confirm', info: 'Покупатель подтвердил оплату' }));
+    };
+  </script>
+</body>
+</html>
