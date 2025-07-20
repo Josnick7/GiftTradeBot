@@ -1,232 +1,145 @@
 <!DOCTYPE html>
-<html lang="ru" >
+<html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Гарант-приложение</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+  <title>Gift Trade App</title>
+  <!-- Google Fonts & FontAwesome -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+  <!-- Telegram WebApp SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    body { margin:0; font-family:'Montserrat',sans-serif; display:flex; flex-direction:column; height:100vh; }
+    header { display:flex; align-items:center; padding:10px; background:#fff; box-shadow:0 1px 4px rgba(0,0,0,0.1); }
+    #back { font-size:1.2em; margin-right:10px; cursor:pointer; }
+    h1 { flex:1; text-align:center; font-size:1.2em; margin:0; }
+    main { flex:1; padding:10px; overflow:auto; }
+    footer { display:flex; justify-content:space-around; padding:10px; background:#fafafa; box-shadow:0 -1px 4px rgba(0,0,0,0.1); }
+    footer .tab { text-align:center; font-size:0.9em; color:#666; }
+    footer .tab i { display:block; font-size:1.2em; margin-bottom:4px; }
+    button { padding:10px; width:100%; font-size:1em; margin:10px 0; cursor:pointer; }
+    .modal { display:none; position:fixed; top:0;left:0; right:0; bottom:0;
+             background:rgba(0,0,0,0.4); justify-content:center; align-items:center; }
+    .modal .content { background:#fff; padding:20px; width:90%; max-width:400px; border-radius:8px; }
+    .step { margin-bottom:20px; }
+  </style>
 </head>
-<body class="bg-gray-50 min-h-screen flex flex-col">
-
-  <header class="bg-white shadow-md p-4 flex justify-between items-center">
-    <h1 class="text-xl font-bold text-gray-800">Гарант - Создать сделку</h1>
+<body>
+  <header>
+    <span id="back"><i class="fa fa-arrow-left"></i></span>
+    <h1>Gift Trade Bot</h1>
   </header>
-
-  <main class="flex-grow container mx-auto p-4 max-w-md bg-white rounded-lg shadow">
-
-    <button id="createDealBtn" class="bg-blue-600 text-white rounded-md w-full py-3 mb-5 hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 transition">
-      Создать сделку
-    </button>
-
-    <form id="dealForm" class="space-y-5 hidden">
-
-      <!-- Выбор страны -->
-      <div>
-        <label class="block mb-1 font-semibold text-gray-700">Выберите страну</label>
-        <select id="country" required class="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-400">
-          <option value="" disabled selected>Выберите страну</option>
-          <option value="kz">Казахстан</option>
-          <option value="by">Белорусь</option>
-          <option value="ru">Россия</option>
-        </select>
-      </div>
-
-      <!-- Метод оплаты -->
-      <div>
-        <label class="block mb-1 font-semibold text-gray-700">Метод оплаты</label>
-        <div class="flex space-x-4">
-          <button type="button" data-method="card" class="payment-method-btn px-4 py-2 border border-gray-300 rounded-md hover:bg-blue-100">Банковская карта</button>
-          <button type="button" data-method="crypto" class="payment-method-btn px-4 py-2 border border-gray-300 rounded-md hover:bg-blue-100">Криптовалюта</button>
-        </div>
-      </div>
-
-      <!-- Валюта -->
-      <div id="currencyContainer" class="hidden">
-        <label class="block mb-1 font-semibold text-gray-700">Выберите валюту</label>
-        <select id="currency" required class="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-400">
-          <!-- Опции будут обновляться JS -->
-        </select>
-      </div>
-
-      <!-- Реквизиты -->
-      <div id="paymentInfoContainer" class="hidden">
-        <label id="paymentInfoLabel" class="block mb-1 font-semibold text-gray-700">Введите реквизиты</label>
-        <input type="text" id="paymentInfoInput" required placeholder="" class="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-400" />
-      </div>
-
-      <!-- Выбор подарка -->
-      <div>
-        <label class="block mb-1 font-semibold text-gray-700">Выберите подарок</label>
-        <div id="giftList" class="grid grid-cols-3 gap-4">
-          <!-- Подарки добавляются JS -->
-        </div>
-      </div>
-
-      <!-- Ползунок цены -->
-      <div>
-        <label for="priceRange" class="block mb-1 font-semibold text-gray-700">Установите цену: <span id="priceValue">50</span></label>
-        <input type="range" min="1" max="10000" step="1" value="50" id="priceRange" class="w-full" />
-      </div>
-
-      <button type="submit" class="bg-green-600 text-white rounded-md w-full py-3 hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-300 transition">
-        Подтвердить сделку
-      </button>
-    </form>
-
-    <div id="dealCreatedMsg" class="hidden mt-6 p-4 bg-green-100 text-green-900 rounded-md select-text">
-      Сделка создана! Ее ID: <span id="dealId"></span>
-      <button id="copyDealIdBtn" class="ml-4 text-blue-600 hover:underline">Скопировать</button>
-    </div>
-
+  <main>
+    <button id="connect">🔌 Connect Wallet</button>
+    <button id="create">▶ Создать сделку</button>
   </main>
-
-  <footer class="bg-white shadow-inner p-4 flex justify-around text-gray-600">
-    <button class="footer-tab focus:outline-none" data-tab="notifications">Уведомления</button>
-    <button class="footer-tab focus:outline-none" data-tab="deals">Активные сделки</button>
-    <button class="footer-tab focus:outline-none" data-tab="profile">Профиль</button>
-    <button class="footer-tab focus:outline-none" data-tab="more">Еще</button>
+  <footer>
+    <div class="tab" id="tab-active"><i class="fa fa-briefcase"></i>Активные</div>
+    <div class="tab" id="tab-notif"><i class="fa fa-bell"></i>Уведомл.</div>
+    <div class="tab" id="tab-prof"><i class="fa fa-user"></i>Профиль</div>
   </footer>
 
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <!-- Модалка для создания сделки -->
+  <div class="modal" id="modal">
+    <div class="content">
+      <div id="step1" class="step">
+        <h3>1/5: Страна</h3>
+        <button data-val="Казахстан">Казахстан</button>
+        <button data-val="Беларусь">Беларусь</button>
+        <button data-val="Россия">Россия</button>
+      </div>
+      <div id="step2" class="step" style="display:none;">
+        <h3>2/5: Способ оплаты</h3>
+        <button data-val="Криптовалюта">Криптовалюта</button>
+        <button data-val="Банковская карта">Банковская карта</button>
+      </div>
+      <div id="step3" class="step" style="display:none;">
+        <h3>3/5: Валюта</h3>
+        <div id="currencies"></div>
+      </div>
+      <div id="step4" class="step" style="display:none;">
+        <h3>4/5: Подарок</h3>
+        <div id="gifts"></div>
+      </div>
+      <div id="step5" class="step" style="display:none;">
+        <h3>5/5: Цена</h3>
+        <input id="priceInput" type="number" placeholder="0" style="width:100%;padding:8px;">
+        <input id="priceSlider" type="range" min="0" max="10000" step="100" value="0" style="width:100%;margin-top:10px;">
+      </div>
+      <button id="next" style="display:none;">Далее ▶</button>
+    </div>
+  </div>
+
   <script>
     const tg = window.Telegram.WebApp;
     tg.expand();
 
-    // Подарки с иконками (пример)
-    const gifts = [
-      { id: 'gift1', name: 'Телефон', icon: '📱' },
-      { id: 'gift2', name: 'Ноутбук', icon: '💻' },
-      { id: 'gift3', name: 'Подарочная карта', icon: '🎁' },
-      { id: 'gift4', name: 'Наушники', icon: '🎧' },
-      { id: 'gift5', name: 'Дрон', icon: '🚁' },
-      { id: 'gift6', name: 'Книга', icon: '📚' },
-    ];
+    // Локальные данные
+    const data = { step:1 };
+    const sellerGifts = ["Bear","Dinosaur","Unicorn"]; // пример
 
-    const giftListElem = document.getElementById('giftList');
-    let selectedMethod = null; // card или crypto
-    let selectedGiftId = null;
+    document.getElementById("back").onclick = () => tg.close();
+    document.getElementById("create").onclick = () => {
+      document.getElementById("modal").style.display = "flex";
+      showStep(1);
+    };
 
-    // Добавляем подарки на страницу
-    gifts.forEach(gift => {
-      const div = document.createElement('div');
-      div.className = 'cursor-pointer border rounded-md p-4 flex flex-col items-center justify-center hover:bg-blue-100 transition';
-      div.innerHTML = `<div class="text-4xl">${gift.icon}</div><div class="mt-2">${gift.name}</div>`;
-
-      div.addEventListener('click', () => {
-        // Отметить выбранный
-        selectedGiftId = gift.id;
-        document.querySelectorAll('#giftList > div').forEach(el => el.classList.remove('border-blue-600', 'bg-blue-200'));
-        div.classList.add('border-blue-600', 'bg-blue-200');
-      });
-
-      giftListElem.appendChild(div);
-    });
-
-    // Обработчики выбора метода оплаты
-    document.querySelectorAll('.payment-method-btn').forEach(button => {
-      button.addEventListener('click', () => {
-        selectedMethod = button.dataset.method;
-        document.querySelectorAll('.payment-method-btn').forEach(btn => btn.classList.remove('bg-blue-600', 'text-white'));
-        button.classList.add('bg-blue-600', 'text-white');
-
-        const currencyContainer = document.getElementById('currencyContainer');
-        const paymentInfoContainer = document.getElementById('paymentInfoContainer');
-        const currencySelect = document.getElementById('currency');
-        const paymentInfoInput = document.getElementById('paymentInfoInput');
-        const paymentInfoLabel = document.getElementById('paymentInfoLabel');
-
-        paymentInfoContainer.classList.remove('hidden');
-        currencyContainer.classList.remove('hidden');
-
-        // Очистить старые опции
-        currencySelect.innerHTML = '';
-
-        if (selectedMethod === 'card') {
-          // Варианты валют для карты
-          ['Белорусский рубль', 'Российский рубль', 'Тенге'].forEach(cur => {
-            const opt = document.createElement('option');
-            opt.value = cur;
-            opt.textContent = cur;
-            currencySelect.appendChild(opt);
-          });
-          paymentInfoLabel.textContent = 'Введите номер карты или телефона';
-          paymentInfoInput.placeholder = 'Номер карты или телефона';
-        } else if (selectedMethod === 'crypto') {
-          // Валюты для криптовалюты
-          ['TON', 'Tether', 'USDT'].forEach(cur => {
-            const opt = document.createElement('option');
-            opt.value = cur;
-            opt.textContent = cur;
-            currencySelect.appendChild(opt);
-          });
-          paymentInfoLabel.textContent = 'Введите криптокошелёк';
-          paymentInfoInput.placeholder = 'Адрес криптокошелька';
-        }
-      });
-    });
-
-    // Скрывать и показывать форму создания сделки
-    const createDealBtn = document.getElementById('createDealBtn');
-    const dealForm = document.getElementById('dealForm');
-    const dealCreatedMsg = document.getElementById('dealCreatedMsg');
-    const dealIdSpan = document.getElementById('dealId');
-    const copyDealIdBtn = document.getElementById('copyDealIdBtn');
-
-    createDealBtn.addEventListener('click', () => {
-      createDealBtn.classList.add('hidden');
-      dealForm.classList.remove('hidden');
-      dealCreatedMsg.classList.add('hidden');
-    });
-
-    // Отображение значения цены при изменении ползунка
-    const priceRange = document.getElementById('priceRange');
-    const priceValue = document.getElementById('priceValue');
-
-    priceRange.addEventListener('input', () => {
-      priceValue.textContent = priceRange.value;
-    });
-
-    // Отправка данных в Telegram-бот
-    dealForm.addEventListener('submit', e => {
-      e.preventDefault();
-
-      if (!selectedMethod) {
-        alert('Выберите метод оплаты');
-        return;
+    function showStep(n) {
+      for(let i=1;i<=5;i++){
+        document.getElementById("step"+i).style.display = i===n ? "block" : "none";
       }
-      if (!selectedGiftId) {
-        alert('Выберите подарок');
-        return;
-      }
+      document.getElementById("next").style.display = n<5 ? "none" : "block";
+      if(n===5) document.getElementById("next").textContent = "Создать сделку";
+      else document.getElementById("next").style.display = "none";
+    }
 
-      const dealData = {
-        country: dealForm.country.value,
-        method: selectedMethod,
-        currency: dealForm.currency.value,
-        paymentInfo: dealForm.paymentInfoInput.value.trim(),
-        giftId: selectedGiftId,
-        price: priceRange.value,
+    // Шаг 1 и 2
+    document.querySelectorAll("#step1 button, #step2 button").forEach(btn=>{
+      btn.onclick = ()=> {
+        if(data.step===1) data.country = btn.dataset.val;
+        else data.method = btn.dataset.val;
+        data.step++;
+        if(data.step===3){
+          // отрисовать валюты
+          const arr = data.method==="Криптовалюта" ? ["TON","Tether","USDT"] : ["KZT","RUB","BYN"];
+          const cblock = document.getElementById("currencies");
+          cblock.innerHTML = "";
+          arr.forEach(c=>{
+            let b=document.createElement("button"); b.textContent=c;
+            b.onclick = ()=>{ data.currency=c; data.step=4; showStep(4); renderGifts() };
+            cblock.append(b);
+          });
+          showStep(3);
+        } else showStep(data.step);
       };
-
-      // Генерируем уникальный ID сделки (например, временный)
-      const dealId = 'DEAL-' + Math.random().toString(36).substr(2, 9).toUpperCase();
-
-      // Отправляем в Telegram Web App
-      tg.sendData(JSON.stringify({ action: 'create_deal', dealId, dealData }));
-
-      // Показываем сообщение со сделкой
-      dealIdSpan.textContent = dealId;
-      dealCreatedMsg.classList.remove('hidden');
-      dealForm.classList.add('hidden');
     });
 
-    // Копирование ID сделки
-    copyDealIdBtn.addEventListener('click', () => {
-      navigator.clipboard.writeText(dealIdSpan.textContent).then(() => {
-        alert('ID сделки скопирован');
+    function renderGifts(){
+      const gblock = document.getElementById("gifts");
+      gblock.innerHTML = "";
+      sellerGifts.forEach(g=>{
+        let b=document.createElement("button"); b.textContent=g;
+        b.onclick = ()=>{
+          data.gift = g;
+          data.step = 5; showStep(5);
+        };
+        gblock.append(b);
       });
-    });
+    }
 
+    // Шаг 5: синхронизируем слайдер и input
+    const s=document.getElementById("priceSlider"), inp=document.getElementById("priceInput");
+    s.oninput = ()=>{ inp.value = s.value };
+    inp.oninput = ()=>{ s.value = inp.value };
+
+    document.getElementById("next").onclick = ()=>{
+      data.price = inp.value;
+      // посылаем результат боту
+      tg.sendData(JSON.stringify(data));
+      tg.close();
+    };
   </script>
 </body>
 </html>
